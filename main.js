@@ -1,127 +1,88 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-if (!canvas || !ctx) {
-    console.error("Canvas not found or unable to get context");
-}
-
-const ROWS = 20;
+// Global Variables
 const COLS = 10;
+const ROWS = 20;
 const BLOCK_SIZE = 30;
-
-const COLORS = ["green", "red", "cyan", "yellow", "orange", "blue", "purple"];
-
-// Define the shapes and their rotations
-const SHAPES = {
-    S: [
-        [['.', '.', '0', '0', '.'],
-         ['.', '0', '0', '.', '.']],
-        [['.', '0', '.', '.'],
-         ['.', '0', '0', '.'],
-         ['.', '.', '0', '.']]
+const shapes = [
+    // S Shape
+    [
+        ['.....', '.....', '..00.', '.00..', '.....'],
+        ['.....', '..0..', '..00.', '...0.', '.....']
     ],
-    Z: [
-        [['0', '0', '.', '.'],
-         ['.', '0', '0', '.']],
-        [['.', '0', '.', '.'],
-         ['0', '0', '.', '.'],
-         ['0', '.', '.', '.']]
+    // Z Shape
+    [
+        ['.....', '.....', '.00..', '..00.', '.....'],
+        ['.....', '..0..', '.00..', '.0...', '.....']
     ],
-    T: [
-        [['.', '0', '.', '.'],
-         ['0', '0', '0', '.']],
-        [['0', '.', '.'],
-         ['0', '0', '.'],
-         ['0', '.', '.']],
-        [['0', '0', '0'],
-         ['.', '0', '.']],
-        [['.', '0', '.'],
-         ['0', '0', '.'],
-         ['.', '0', '.']]
-    ],
-};
-
-// Helper functions
-function createGrid() {
-    return Array.from({ length: ROWS }, () => Array(COLS).fill(null));
-}
-
-function drawBlock(x, y, color) {
-    ctx.fillStyle = color;
-    ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
-    ctx.strokeStyle = 'black';
-    ctx.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
-}
-
-// Class for Tetris pieces
-class Piece {
-    constructor(shape, color) {
-        this.shape = shape;
-        this.color = color;
-        this.x = Math.floor(COLS / 2) - 1;
-        this.y = 0;
-        this.rotation = 0;
-    }
-
-    draw() {
-        this.shape[this.rotation].forEach((row, i) => {
-            row.forEach((block, j) => {
-                if (block === '0') {
-                    drawBlock(this.x + j, this.y + i, this.color);
-                }
-            });
-        });
-    }
-
-    move(dx, dy) {
-        this.x += dx;
-        this.y += dy;
-    }
-
-    rotate() {
-        this.rotation = (this.rotation + 1) % this.shape.length;
-    }
-}
+    // I Shape
+    [
+        ['..0..', '..0..', '..0..', '..0..', '.....'],
+        ['.....', '0000.', '.....', '.....', '.....']
+    ]
+];
 
 let grid = createGrid();
-let currentPiece = new Piece(SHAPES.S, COLORS[0]);
+let currentPiece = getRandomPiece();
+let nextPiece = getRandomPiece();
 
-// Main game loop
+// Create empty grid
+function createGrid() {
+    return Array.from({ length: ROWS }, () => Array(COLS).fill(''));
+}
+
+// Draw the grid
+function drawGrid() {
+    ctx.strokeStyle = 'gray';
+    for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLS; col++) {
+            ctx.strokeRect(col * BLOCK_SIZE, row * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+        }
+    }
+}
+
+// Draw a piece on the canvas
+function drawPiece(piece) {
+    piece.shape.forEach((row, y) => {
+        row.forEach((value, x) => {
+            if (value === '0') {
+                ctx.fillStyle = piece.color;
+                ctx.fillRect(
+                    (piece.x + x) * BLOCK_SIZE,
+                    (piece.y + y) * BLOCK_SIZE,
+                    BLOCK_SIZE,
+                    BLOCK_SIZE
+                );
+            }
+        });
+    });
+}
+
+// Get a random piece
+function getRandomPiece() {
+    const shape = shapes[Math.floor(Math.random() * shapes.length)];
+    return {
+        shape: shape[0],
+        x: Math.floor(COLS / 2) - 2,
+        y: 0,
+        color: 'red'
+    };
+}
+
+// Game loop
 function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawGrid();
-    currentPiece.draw();
+    drawPiece(currentPiece);
     requestAnimationFrame(gameLoop);
 }
 
-// Draw the game grid
-function drawGrid() {
-    ctx.strokeStyle = 'gray';
-    for (let i = 0; i <= ROWS; i++) {
-        ctx.beginPath();
-        ctx.moveTo(0, i * BLOCK_SIZE);
-        ctx.lineTo(COLS * BLOCK_SIZE, i * BLOCK_SIZE);
-        ctx.stroke();
-    }
-    for (let j = 0; j <= COLS; j++) {
-        ctx.beginPath();
-        ctx.moveTo(j * BLOCK_SIZE, 0);
-        ctx.lineTo(j * BLOCK_SIZE, ROWS * BLOCK_SIZE);
-        ctx.stroke();
-    }
-}
-
-// Event listener for user input
+// Handle user input
 window.addEventListener('keydown', (event) => {
-    if (event.key === 'ArrowLeft') {
-        currentPiece.move(-1, 0);
-    } else if (event.key === 'ArrowRight') {
-        currentPiece.move(1, 0);
-    } else if (event.key === 'ArrowDown') {
-        currentPiece.move(0, 1);
-    } else if (event.key === 'ArrowUp') {
-        currentPiece.rotate();
-    }
+    if (event.key === 'ArrowLeft') currentPiece.x--;
+    if (event.key === 'ArrowRight') currentPiece.x++;
+    if (event.key === 'ArrowDown') currentPiece.y++;
 });
 
 // Start the game loop
