@@ -1,54 +1,50 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
+const nextCanvas = document.getElementById("nextPieceCanvas");
+const nextCtx = nextCanvas.getContext("2d");
 
 // Grid configuration
 const COLS = 10;
 const ROWS = 20;
 const BLOCK_SIZE = 30;
-
-// Colors for different shapes
 const colors = ["red", "green", "blue", "yellow", "purple", "cyan", "orange"];
 
-// Shapes definition
+// Define shapes
 const shapes = [
-    // S shape
     [
         ['.....', '.....', '..00.', '.00..', '.....'],
         ['.....', '..0..', '..00.', '...0.', '.....']
     ],
-    // Z shape
     [
         ['.....', '.....', '.00..', '..00.', '.....'],
         ['.....', '..0..', '.00..', '.0...', '.....']
     ],
-    // I shape
     [
         ['..0..', '..0..', '..0..', '..0..', '.....'],
         ['.....', '0000.', '.....', '.....', '.....']
     ],
-    // O shape
     [['.....', '.....', '.00..', '.00..', '.....']],
-    // J shape
     [
         ['.....', '.0...', '.000.', '.....', '.....'],
         ['.....', '..00.', '..0..', '..0..', '.....']
     ]
 ];
 
-// Game variables
 let grid = createGrid();
 let currentPiece = getRandomPiece();
 let nextPiece = getRandomPiece();
+let score = 0;
+let level = 1;
+let fallSpeed = 1000;
 let lastTime = 0;
 let fallTime = 0;
-const fallSpeed = 1000; // 1 second
 
 // Create an empty grid
 function createGrid() {
     return Array.from({ length: ROWS }, () => Array(COLS).fill(''));
 }
 
-// Draw the grid on the canvas
+// Draw the grid
 function drawGrid() {
     ctx.strokeStyle = 'gray';
     for (let row = 0; row < ROWS; row++) {
@@ -59,19 +55,19 @@ function drawGrid() {
 }
 
 // Draw a piece on the canvas
-function drawPiece(piece) {
+function drawPiece(piece, context) {
     piece.shape.forEach((row, y) => {
         row.forEach((value, x) => {
             if (value === '0') {
-                ctx.fillStyle = piece.color;
-                ctx.fillRect(
+                context.fillStyle = piece.color;
+                context.fillRect(
                     (piece.x + x) * BLOCK_SIZE,
                     (piece.y + y) * BLOCK_SIZE,
                     BLOCK_SIZE,
                     BLOCK_SIZE
                 );
-                ctx.strokeStyle = 'black';
-                ctx.strokeRect(
+                context.strokeStyle = 'black';
+                context.strokeRect(
                     (piece.x + x) * BLOCK_SIZE,
                     (piece.y + y) * BLOCK_SIZE,
                     BLOCK_SIZE,
@@ -86,9 +82,9 @@ function drawPiece(piece) {
 function getRandomPiece() {
     const shape = shapes[Math.floor(Math.random() * shapes.length)];
     return {
-        shape: shape[0],  // First rotation of the shape
-        x: Math.floor(COLS / 2) - 2,  // Center the piece
-        y: 0,  // Start at the top
+        shape: shape[0],
+        x: Math.floor(COLS / 2) - 2,
+        y: 0,
         color: colors[Math.floor(Math.random() * colors.length)]
     };
 }
@@ -110,7 +106,7 @@ function validMove(piece, dx, dy) {
     return true;
 }
 
-// Lock the piece in place and add it to the grid
+// Lock the piece into the grid
 function lockPiece(piece) {
     piece.shape.forEach((row, y) => {
         row.forEach((value, x) => {
@@ -119,16 +115,52 @@ function lockPiece(piece) {
             }
         });
     });
+    clearRows();
 }
 
 // Clear full rows
 function clearRows() {
     for (let y = ROWS - 1; y >= 0; y--) {
         if (grid[y].every(cell => cell !== '')) {
-            grid.splice(y, 1);  // Remove the row
-            grid.unshift(Array(COLS).fill(''));  // Add an empty row at the top
+            grid.splice(y, 1);
+            grid.unshift(Array(COLS).fill(''));
+            updateScore(100);
         }
     }
+}
+
+// Update the score and level
+function updateScore(points) {
+    score += points;
+    document.getElementById('score').innerText = `Score: ${score}`;
+    updateLevel();
+}
+
+// Update the level and adjust fall speed
+function updateLevel() {
+    level = Math.floor(score / 500) + 1;
+    fallSpeed = Math.max(100, 1000 - (level * 100));
+}
+
+// Draw the next piece
+function drawNextPiece() {
+    nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
+    nextPiece.shape.forEach((row, y) => {
+        row.forEach((value, x) => {
+            if (value === '0') {
+                nextCtx.fillStyle = nextPiece.color;
+                nextCtx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+                nextCtx.strokeStyle = 'black';
+                nextCtx.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+            }
+        });
+    });
+}
+
+// Game over function
+function gameOver() {
+    document.getElementById('gameOver').style.display = 'block';
+    cancelAnimationFrame(gameLoop);
 }
 
 // Game loop
@@ -143,21 +175,19 @@ function gameLoop(time = 0) {
             currentPiece.y++;
         } else {
             lockPiece(currentPiece);
-            clearRows();
             currentPiece = nextPiece;
             nextPiece = getRandomPiece();
-
             if (!validMove(currentPiece, 0, 0)) {
-                alert('Game Over');
-                grid = createGrid();  // Reset the grid
+                gameOver();
+                return;
             }
         }
     }
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);  // Clear the canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawGrid();
-    drawPiece(currentPiece);
-
+    drawPiece(currentPiece, ctx);
+    drawNextPiece();
     requestAnimationFrame(gameLoop);
 }
 
