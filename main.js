@@ -1,6 +1,14 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
+if (!canvas || !ctx) {
+    console.error("Canvas not found or unable to get context");
+}
+
+// Draw something basic to check if it's working
+ctx.fillStyle = "red";
+ctx.fillRect(10, 10, 100, 100);
+
 const ROWS = 20;
 const COLS = 10;
 const BLOCK_SIZE = 30;
