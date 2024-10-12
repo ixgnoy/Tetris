@@ -35,7 +35,7 @@ let currentPiece = getRandomPiece();
 let nextPiece = getRandomPiece();
 let score = 0;
 let level = 1;
-let fallSpeed = 1000;
+let fallSpeed = 1000;  // Initial fall speed
 let lastTime = 0;
 let fallTime = 0;
 
@@ -142,27 +142,6 @@ function updateLevel() {
     fallSpeed = Math.max(100, 1000 - (level * 100));
 }
 
-// Draw the next piece
-function drawNextPiece() {
-    nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
-    nextPiece.shape.forEach((row, y) => {
-        row.forEach((value, x) => {
-            if (value === '0') {
-                nextCtx.fillStyle = nextPiece.color;
-                nextCtx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
-                nextCtx.strokeStyle = 'black';
-                nextCtx.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
-            }
-        });
-    });
-}
-
-// Game over function
-function gameOver() {
-    document.getElementById('gameOver').style.display = 'block';
-    cancelAnimationFrame(gameLoop);
-}
-
 // Game loop
 function gameLoop(time = 0) {
     const deltaTime = time - lastTime;
@@ -191,6 +170,12 @@ function gameLoop(time = 0) {
     requestAnimationFrame(gameLoop);
 }
 
+// Draw the next piece
+function drawNextPiece() {
+    nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
+    drawPiece(nextPiece, nextCtx);
+}
+
 // Handle user input
 window.addEventListener('keydown', (event) => {
     if (event.key === 'ArrowLeft' && validMove(currentPiece, -1, 0)) {
@@ -212,6 +197,11 @@ function rotatePiece(shape) {
     return shape[0].map((_, index) =>
         shape.map(row => row[index]).reverse()
     );
+}
+
+// Game over function
+function gameOver() {
+    document.getElementById('gameOver').style.display = 'block';
 }
 
 // Start the game loop
